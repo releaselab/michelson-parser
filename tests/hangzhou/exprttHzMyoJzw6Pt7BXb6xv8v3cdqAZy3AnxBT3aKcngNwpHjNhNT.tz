@@ -1,0 +1,136 @@
+{ storage
+    (pair (pair (pair (pair (pair (address %administrator)
+                                  (big_map %auctions
+                                     nat
+                                     (pair (pair (pair (mutez %bid_amount) (pair (mutez %bid_start) (mutez %bid_step)))
+                                                 (pair (address %bidder) (pair (mutez %buy_now) (bool %dutch))))
+                                           (pair (pair (timestamp %end_timestamp) (pair (mutez %reserve) (int %round_len)))
+                                                 (pair (address %seller)
+                                                       (pair (timestamp %start_timestamp)
+                                                             (list %tokens (pair (nat %amount) (pair (address %fa2) (nat %token_id))))))))))
+                            (pair (address %distributor) (int %ext)))
+                      (pair (pair (int %max_dur) (int %max_round))
+                            (pair (nat %max_tokens) (pair (big_map %metadata string bytes) (mutez %min_bid)))))
+                (pair (pair (pair (int %min_dur) (int %min_round))
+                            (pair (mutez %min_step) (nat %next_auction_id)))
+                      (pair (pair (bool %paused) (nat %trading_fee))
+                            (pair (nat %treasure_fee) (pair (address %treasury) (map %whitelist address bool))))))
+          (big_map
+             nat
+             (lambda
+                (pair (or (or (or nat nat)
+                              (or (pair (pair (pair mutez mutez) (pair mutez bool))
+                                        (pair (pair timestamp mutez) (pair int (list (pair nat (pair address nat))))))
+                                  (pair bool address)))
+                          (or (or address
+                                  (pair (pair (pair int int) (pair int nat)) (pair (pair mutez int) (pair int mutez))))
+                              (or address (or (pair nat nat) bool))))
+                      (pair (pair (pair (pair address
+                                              (big_map
+                                                 nat
+                                                 (pair (pair (pair mutez (pair mutez mutez)) (pair address (pair mutez bool)))
+                                                       (pair (pair timestamp (pair mutez int))
+                                                             (pair address (pair timestamp (list (pair nat (pair address nat)))))))))
+                                        (pair address int))
+                                  (pair (pair int int) (pair nat (pair (big_map string bytes) mutez))))
+                            (pair (pair (pair int int) (pair mutez nat))
+                                  (pair (pair bool nat) (pair nat (pair address (map address bool)))))))
+                (pair (list operation)
+                      (pair (pair (pair (pair address
+                                              (big_map
+                                                 nat
+                                                 (pair (pair (pair mutez (pair mutez mutez)) (pair address (pair mutez bool)))
+                                                       (pair (pair timestamp (pair mutez int))
+                                                             (pair address (pair timestamp (list (pair nat (pair address nat)))))))))
+                                        (pair address int))
+                                  (pair (pair int int) (pair nat (pair (big_map string bytes) mutez))))
+                            (pair (pair (pair int int) (pair mutez nat))
+                                  (pair (pair bool nat) (pair nat (pair address (map address bool)))))))))) ;
+  parameter
+    (or (or (or (nat %bid) (nat %conclude_auction))
+            (or (pair %create_auction
+                   (pair (pair (mutez %bid_start) (mutez %bid_step)) (pair (mutez %buy_now) (bool %dutch)))
+                   (pair (pair (timestamp %end_timestamp) (mutez %reserve))
+                         (pair (int %round_len)
+                               (list %tokens (pair (nat %amount) (pair (address %fa2) (nat %token_id)))))))
+                (pair %mod_whitelist (bool %enabled) (address %fa2))))
+        (or (or (address %set_administrator)
+                (pair %set_auction_params
+                   (pair (pair (int %ext) (int %max_dur)) (pair (int %max_round) (nat %max_tokens)))
+                   (pair (pair (mutez %min_bid) (int %min_dur)) (pair (int %min_round) (mutez %min_step)))))
+            (or (address %set_distributor)
+                (or (pair %set_fees (nat %trading_fee) (nat %treasure_fee)) (bool %set_pause))))) ;
+  code { CAST (pair (or (or (or nat nat)
+                            (or (pair (pair (pair mutez mutez) (pair mutez bool))
+                                      (pair (pair timestamp mutez) (pair int (list (pair nat (pair address nat))))))
+                                (pair bool address)))
+                        (or (or address
+                                (pair (pair (pair int int) (pair int nat)) (pair (pair mutez int) (pair int mutez))))
+                            (or address (or (pair nat nat) bool))))
+                    (pair (pair (pair (pair (pair address
+                                                  (big_map
+                                                     nat
+                                                     (pair (pair (pair mutez (pair mutez mutez)) (pair address (pair mutez bool)))
+                                                           (pair (pair timestamp (pair mutez int))
+                                                                 (pair address (pair timestamp (list (pair nat (pair address nat)))))))))
+                                            (pair address int))
+                                      (pair (pair int int) (pair nat (pair (big_map string bytes) mutez))))
+                                (pair (pair (pair int int) (pair mutez nat))
+                                      (pair (pair bool nat) (pair nat (pair address (map address bool))))))
+                          (big_map
+                             nat
+                             (lambda
+                                (pair (or (or (or nat nat)
+                                              (or (pair (pair (pair mutez mutez) (pair mutez bool))
+                                                        (pair (pair timestamp mutez) (pair int (list (pair nat (pair address nat))))))
+                                                  (pair bool address)))
+                                          (or (or address
+                                                  (pair (pair (pair int int) (pair int nat)) (pair (pair mutez int) (pair int mutez))))
+                                              (or address (or (pair nat nat) bool))))
+                                      (pair (pair (pair (pair address
+                                                              (big_map
+                                                                 nat
+                                                                 (pair (pair (pair mutez (pair mutez mutez)) (pair address (pair mutez bool)))
+                                                                       (pair (pair timestamp (pair mutez int))
+                                                                             (pair address (pair timestamp (list (pair nat (pair address nat)))))))))
+                                                        (pair address int))
+                                                  (pair (pair int int) (pair nat (pair (big_map string bytes) mutez))))
+                                            (pair (pair (pair int int) (pair mutez nat))
+                                                  (pair (pair bool nat) (pair nat (pair address (map address bool)))))))
+                                (pair (list operation)
+                                      (pair (pair (pair (pair address
+                                                              (big_map
+                                                                 nat
+                                                                 (pair (pair (pair mutez (pair mutez mutez)) (pair address (pair mutez bool)))
+                                                                       (pair (pair timestamp (pair mutez int))
+                                                                             (pair address (pair timestamp (list (pair nat (pair address nat)))))))))
+                                                        (pair address int))
+                                                  (pair (pair int int) (pair nat (pair (big_map string bytes) mutez))))
+                                            (pair (pair (pair int int) (pair mutez nat))
+                                                  (pair (pair bool nat) (pair nat (pair address (map address bool))))))))))) ;
+         UNPAIR 3 ;
+         DUP ;
+         IF_LEFT
+           { IF_LEFT
+               { IF_LEFT { DROP ; PUSH nat 0 } { DROP ; PUSH nat 1 } }
+               { IF_LEFT { DROP ; PUSH nat 2 } { DROP ; PUSH nat 3 } } }
+           { IF_LEFT
+               { IF_LEFT { DROP ; PUSH nat 4 } { DROP ; PUSH nat 5 } }
+               { IF_LEFT
+                   { DROP ; PUSH nat 6 }
+                   { IF_LEFT { DROP ; PUSH nat 7 } { DROP ; PUSH nat 8 } } } } ;
+         DUP 4 ;
+         SWAP ;
+         GET ;
+         IF_NONE { PUSH int -1 ; FAILWITH } {} ;
+         DUG 2 ;
+         PAIR ;
+         EXEC ;
+         UNPAIR ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONS } ;
+         DUG 2 ;
+         PAIR ;
+         SWAP ;
+         PAIR } }

@@ -1,0 +1,185 @@
+{ parameter
+    (pair (pair (pair (bytes %block_hash) (int %block_height))
+                (pair (bytes %block_payload_hash) (list %signatures (option signature))))
+          (pair (bytes %state_hash) (list %validators key))) ;
+  storage
+    (pair (pair (bytes %current_block_hash) (int %current_block_height))
+          (pair (bytes %current_state_hash) (list %current_validators key))) ;
+  code { LAMBDA
+           (pair string bool)
+           unit
+           { UNPAIR ; SWAP ; NOT ; IF { FAILWITH } { DROP ; PUSH unit Unit } } ;
+         SWAP ;
+         UNPAIR ;
+         DUP ;
+         CAR ;
+         CAR ;
+         CAR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         CAR ;
+         CAR ;
+         CDR ;
+         DUP 4 ;
+         CAR ;
+         CDR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         COMPARE ;
+         GT ;
+         PUSH string "old block height" ;
+         PAIR ;
+         DUP 6 ;
+         SWAP ;
+         EXEC ;
+         DROP ;
+         DUP 3 ;
+         CDR ;
+         CDR ;
+         PACK ;
+         BLAKE2B ;
+         DUP 4 ;
+         CDR ;
+         CAR ;
+         PAIR ;
+         DUP 4 ;
+         CAR ;
+         CDR ;
+         CAR ;
+         DUP 5 ;
+         CAR ;
+         CAR ;
+         CDR ;
+         PAIR ;
+         PAIR ;
+         PACK ;
+         BLAKE2B ;
+         DUP 4 ;
+         CAR ;
+         CAR ;
+         CAR ;
+         COMPARE ;
+         EQ ;
+         PUSH string "invalid block hash" ;
+         PAIR ;
+         DIG 5 ;
+         SWAP ;
+         EXEC ;
+         DROP ;
+         PUSH int 3 ;
+         PUSH int 2 ;
+         DUP 6 ;
+         CDR ;
+         CDR ;
+         SIZE ;
+         INT ;
+         MUL ;
+         EDIV ;
+         IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+         CAR ;
+         DUP 3 ;
+         PAIR ;
+         DUP 4 ;
+         CAR ;
+         CDR ;
+         CDR ;
+         DUP 6 ;
+         CDR ;
+         CDR ;
+         PAIR ;
+         PAIR ;
+         LEFT unit ;
+         LOOP_LEFT
+           { UNPAIR ;
+             UNPAIR ;
+             DIG 2 ;
+             UNPAIR ;
+             DIG 3 ;
+             DIG 3 ;
+             IF_CONS
+               { DIG 2 ;
+                 IF_CONS
+                   { IF_NONE
+                       { SWAP ;
+                         DROP ;
+                         DIG 3 ;
+                         DIG 3 ;
+                         PAIR ;
+                         SWAP ;
+                         DIG 2 ;
+                         PAIR ;
+                         PAIR ;
+                         LEFT unit }
+                       { DUP 5 ;
+                         SWAP ;
+                         DIG 3 ;
+                         CHECK_SIGNATURE ;
+                         IF { PUSH int 1 ;
+                              DIG 4 ;
+                              SUB ;
+                              DIG 3 ;
+                              PAIR ;
+                              SWAP ;
+                              DIG 2 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT unit }
+                            { DROP 4 ; PUSH string "bad signature" ; FAILWITH } } }
+                   { DROP 4 ;
+                     PUSH string "validators and signatures have different size" ;
+                     FAILWITH } }
+               { SWAP ;
+                 DROP ;
+                 IF_CONS
+                   { DROP 3 ;
+                     PUSH string "validators and signatures have different size" ;
+                     FAILWITH }
+                   { PUSH int 0 ;
+                     SWAP ;
+                     COMPARE ;
+                     GT ;
+                     IF { PUSH string "not enough signatures" ; FAILWITH }
+                        { PUSH unit Unit ;
+                          RIGHT (pair (pair (list key) (list (option signature))) (pair bytes int)) } } } } ;
+         DROP ;
+         DUP 4 ;
+         CDR ;
+         DIG 4 ;
+         CAR ;
+         CDR ;
+         DIG 3 ;
+         PAIR ;
+         PAIR ;
+         DUP ;
+         CDR ;
+         DUG 2 ;
+         CAR ;
+         CAR ;
+         PAIR ;
+         PAIR ;
+         DUP ;
+         CDR ;
+         CDR ;
+         DUP 3 ;
+         CDR ;
+         CAR ;
+         PAIR ;
+         SWAP ;
+         CAR ;
+         PAIR ;
+         SWAP ;
+         CDR ;
+         CDR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         CDR ;
+         CAR ;
+         PAIR ;
+         SWAP ;
+         CAR ;
+         PAIR ;
+         NIL operation ;
+         PAIR } }

@@ -1,0 +1,134 @@
+{ storage
+    (pair (pair (address %admin) (bool %locked))
+          (pair (map %payout address nat) (timestamp %timelock))) ;
+  parameter
+    (or (or (timestamp %config_timelock) (or (unit %default) (unit %lock)))
+        (or (pair %mint
+               (pair (address %address) (nat %amount))
+               (pair (address %kt) (pair (map %metadata string bytes) (nat %royalties))))
+            (or (unit %payout) (map %payout_config address nat)))) ;
+  code { UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF { SWAP ; DUP ; DUG 2 ; CAR ; CDR ; NOT } { PUSH bool False } ;
+                 IF {}
+                    { PUSH string
+                           "WrongCondition: (sp.sender == self.data.admin) & (~ self.data.locked)" ;
+                      FAILWITH } ;
+                 UPDATE 4 }
+               { IF_LEFT
+                   { DROP }
+                   { DROP ;
+                     DUP ;
+                     CAR ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {}
+                        { PUSH string "WrongCondition: sp.sender == self.data.admin" ; FAILWITH } ;
+                     UNPAIR ;
+                     CAR ;
+                     PUSH bool True ;
+                     SWAP ;
+                     PAIR ;
+                     PAIR } } ;
+             NIL operation }
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {}
+                    { PUSH string "WrongCondition: sp.sender == self.data.admin" ; FAILWITH } ;
+                 DUP ;
+                 GET 3 ;
+                 CONTRACT %mint_OBJKT (pair (pair address nat) (pair (map string bytes) nat)) ;
+                 IF_NONE { PUSH int 52 ; FAILWITH } {} ;
+                 NIL operation ;
+                 SWAP ;
+                 PUSH mutez 0 ;
+                 DIG 3 ;
+                 DUP ;
+                 GET 6 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 5 ;
+                 GET 5 ;
+                 PAIR ;
+                 DIG 4 ;
+                 DUP ;
+                 CAR ;
+                 CDR ;
+                 SWAP ;
+                 CAR ;
+                 CAR ;
+                 PAIR ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { IF_LEFT
+                   { SENDER ;
+                     DUP 3 ;
+                     CAR ;
+                     CAR ;
+                     COMPARE ;
+                     EQ ;
+                     IF {}
+                        { PUSH string "WrongCondition: self.data.admin == sp.sender" ; FAILWITH } ;
+                     NIL operation ;
+                     DUP 3 ;
+                     GET 3 ;
+                     ITER { CAR ;
+                            DUP ;
+                            DUG 2 ;
+                            CONTRACT unit ;
+                            IF_NONE { PUSH int 45 ; FAILWITH } {} ;
+                            PUSH mutez 1 ;
+                            DUP 6 ;
+                            GET 3 ;
+                            DIG 4 ;
+                            GET ;
+                            IF_NONE { PUSH int 45 ; FAILWITH } {} ;
+                            PUSH nat 10000 ;
+                            PUSH mutez 1 ;
+                            BALANCE ;
+                            EDIV ;
+                            IF_NONE { PUSH int 45 ; FAILWITH } {} ;
+                            CAR ;
+                            EDIV ;
+                            IF_NONE { PUSH int 45 ; FAILWITH } { CAR } ;
+                            MUL ;
+                            MUL ;
+                            UNIT ;
+                            TRANSFER_TOKENS ;
+                            CONS } ;
+                     SWAP ;
+                     DROP }
+                   { PUSH nat 0 ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     ITER { CDR ; ADD } ;
+                     PUSH nat 10000 ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "WrongCondition: total.value == 10000" ; FAILWITH } ;
+                     UPDATE 3 ;
+                     NIL operation } } } ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONS } ;
+         PAIR } }

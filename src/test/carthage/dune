@@ -1,0 +1,7 @@
+(test
+ (name parsing)
+ (libraries michelson-adt.carthage michelson-parser.carthage alcotest)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{test}))))

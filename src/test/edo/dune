@@ -1,0 +1,7 @@
+(test
+ (name parsing)
+ (libraries michelson-adt.edo michelson-parser.edo alcotest)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{test}))))

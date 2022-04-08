@@ -1,0 +1,184 @@
+{ parameter
+    (or (or (address %add_manager)
+            (or (unit %confirm_admin)
+                (pair %mint
+                   (address %address)
+                   (pair (pair %attribute
+                            (string %category)
+                            (pair (map %ints string int)
+                                  (pair (map %sets string (set nat)) (map %strings string string))))
+                         (pair (nat %editions) (bytes %metadataUri))))))
+        (or (pair %mint_custom
+               (address %address)
+               (pair (pair %attribute
+                        (string %category)
+                        (pair (map %ints string int)
+                              (pair (map %sets string (set nat)) (map %strings string string))))
+                     (pair (nat %editions) (pair (bytes %metadataUri) (nat %uid)))))
+            (or (address %remove_manager) (address %set_administrator)))) ;
+  storage
+    (pair (address %administrator)
+          (pair (set %managers address)
+                (pair (big_map %metadata string bytes)
+                      (pair (address %nft_registry) (option %pending_admin address))))) ;
+  code { CAST (pair (or (or address
+                            (or unit
+                                (pair address
+                                      (pair (pair string (pair (map string int) (pair (map string (set nat)) (map string string))))
+                                            (pair nat bytes)))))
+                        (or (pair address
+                                  (pair (pair string (pair (map string int) (pair (map string (set nat)) (map string string))))
+                                        (pair nat (pair bytes nat))))
+                            (or address address)))
+                    (pair address
+                          (pair (set address) (pair (big_map string bytes) (pair address (option address)))))) ;
+         { { DUP ; CAR ; DIP { CDR } } } ;
+         IF_LEFT
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH string "NOT_ADMIN" ; FAILWITH } ;
+                 SWAP ;
+                 DUP ;
+                 GET 3 ;
+                 PUSH bool True ;
+                 DIG 3 ;
+                 UPDATE ;
+                 UPDATE 3 ;
+                 NIL operation }
+               { IF_LEFT
+                   { DROP ;
+                     DUP ;
+                     GET 8 ;
+                     IF_NONE { PUSH string "NO_PENDING_ADMIN" ; FAILWITH } {} ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "NOT_PENGING_ADMIN" ; FAILWITH } ;
+                     DUP ;
+                     GET 8 ;
+                     IF_NONE { PUSH string "NO_PENDING_ADMIN" ; FAILWITH } {} ;
+                     UPDATE 1 ;
+                     NONE address ;
+                     UPDATE 8 ;
+                     NIL operation }
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF { PUSH bool True } { SWAP ; DUP ; DUG 2 ; GET 3 ; SENDER ; MEM } ;
+                     IF {} { PUSH string "NOT_ADMIN_OR_MANAGER" ; FAILWITH } ;
+                     NIL operation ;
+                     DUP ;
+                     { DIP 3 { DUP } ; DIG 4 } ;
+                     GET 7 ;
+                     CONTRACT %mint
+                       (pair address
+                             (pair (pair string (pair (map string int) (pair (map string (set nat)) (map string string))))
+                                   (pair nat (map string bytes)))) ;
+                     IF_NONE { PUSH int 51 ; FAILWITH } {} ;
+                     PUSH mutez 0 ;
+                     EMPTY_MAP string bytes ;
+                     { DIP 5 { DUP } ; DIG 6 } ;
+                     GET 6 ;
+                     SOME ;
+                     PUSH string "" ;
+                     UPDATE ;
+                     DIG 5 ;
+                     DUP ;
+                     GET 5 ;
+                     SWAP ;
+                     DUP ;
+                     GET 3 ;
+                     SWAP ;
+                     DUP ;
+                     DUG 8 ;
+                     CAR ;
+                     PAIR 4 ;
+                     DIG 4 ;
+                     DROP ;
+                     DIG 4 ;
+                     DROP ;
+                     TRANSFER_TOKENS ;
+                     CONS } } }
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF { PUSH bool True } { SWAP ; DUP ; DUG 2 ; GET 3 ; SENDER ; MEM } ;
+                 IF {} { PUSH string "NOT_ADMIN_OR_MANAGER" ; FAILWITH } ;
+                 NIL operation ;
+                 DUP ;
+                 { DIP 3 { DUP } ; DIG 4 } ;
+                 GET 7 ;
+                 CONTRACT %mint_custom
+                   (pair address
+                         (pair (pair string (pair (map string int) (pair (map string (set nat)) (map string string))))
+                               (pair nat (pair (map string bytes) nat)))) ;
+                 IF_NONE { PUSH int 84 ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 { DIP 4 { DUP } ; DIG 5 } ;
+                 GET 8 ;
+                 EMPTY_MAP string bytes ;
+                 { DIP 6 { DUP } ; DIG 7 } ;
+                 GET 7 ;
+                 SOME ;
+                 PUSH string "" ;
+                 UPDATE ;
+                 DIG 6 ;
+                 DUP ;
+                 GET 5 ;
+                 SWAP ;
+                 DUP ;
+                 GET 3 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 9 ;
+                 CAR ;
+                 PAIR 5 ;
+                 DIG 4 ;
+                 DROP ;
+                 DIG 4 ;
+                 DROP ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { IF_LEFT
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "NOT_ADMIN" ; FAILWITH } ;
+                     SWAP ;
+                     DUP ;
+                     GET 3 ;
+                     PUSH bool False ;
+                     DIG 3 ;
+                     UPDATE ;
+                     UPDATE 3 }
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "NOT_ADMIN" ; FAILWITH } ;
+                     SOME ;
+                     UPDATE 8 } ;
+                 NIL operation } } ;
+         PAIR } }

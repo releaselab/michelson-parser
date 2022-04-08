@@ -1,0 +1,6 @@
+(library
+ (name carthage_parser)
+ (public_name michelson-parser.carthage)
+ (libraries common_parser michelson-adt.carthage tezos-micheline base bignum)
+ (preprocess
+  (pps ppx_deriving.ord ppx_sexp_conv)))

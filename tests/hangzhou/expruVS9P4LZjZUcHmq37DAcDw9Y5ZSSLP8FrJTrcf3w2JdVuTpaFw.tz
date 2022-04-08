@@ -1,0 +1,102 @@
+{ parameter
+    (or (pair %withdrawal
+           (pair (pair (address %address) (nat %tokenId) (or %tokenType (unit %fa1) (unit %fa2)))
+                 address)
+           nat)
+        (pair %withdrawalProfit
+           (pair (address %address) (nat %tokenId) (or %tokenType (unit %fa1) (unit %fa2)))
+           address)) ;
+  storage address ;
+  code { UNPAIR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         SENDER ;
+         COMPARE ;
+         NEQ ;
+         IF { PUSH string "INVALID_ACCESS" ; FAILWITH } {} ;
+         IF_LEFT
+           { NIL operation ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CAR ;
+             GET 4 ;
+             IF_LEFT
+               { DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 CONTRACT %transfer (pair (address %from) (pair (address %to) (nat %value))) ;
+                 IF_NONE { PUSH string "CANNOT_INVOKE_FA1_TRANSFER" ; FAILWITH } {} ;
+                 SELF_ADDRESS ;
+                 DUP 4 ;
+                 CAR ;
+                 CDR ;
+                 DIG 4 ;
+                 CDR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR ;
+                 DUG 2 ;
+                 PUSH mutez 0 ;
+                 DIG 3 ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 CONTRACT %transfer
+                   (list (pair (address %from_)
+                               (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+                 IF_NONE { PUSH string "CANNOT_INVOKE_FA2_TRANSFER" ; FAILWITH } {} ;
+                 SELF_ADDRESS ;
+                 NIL (pair address (pair nat nat)) ;
+                 DUP 5 ;
+                 CAR ;
+                 CDR ;
+                 DUP 6 ;
+                 CAR ;
+                 CAR ;
+                 GET 3 ;
+                 DIG 6 ;
+                 CDR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR ;
+                 CONS ;
+                 SWAP ;
+                 PAIR ;
+                 DUG 2 ;
+                 PUSH mutez 0 ;
+                 NIL (pair address (list (pair address (pair nat nat)))) ;
+                 DIG 4 ;
+                 CONS ;
+                 TRANSFER_TOKENS ;
+                 CONS } ;
+             PAIR }
+           { DUP ;
+             CAR ;
+             CAR ;
+             CONTRACT %withdrawProfit address ;
+             IF_NONE
+               { DROP ; NIL operation ; PAIR }
+               { DIG 2 ;
+                 NIL operation ;
+                 DIG 2 ;
+                 PUSH mutez 0 ;
+                 DIG 4 ;
+                 CDR ;
+                 TRANSFER_TOKENS ;
+                 CONS ;
+                 PAIR } } } }

@@ -1,0 +1,62 @@
+{ storage
+    (pair (pair (pair (pair (address %administrator) (address %distributor))
+                      (pair (big_map %metadata string bytes)
+                            (map %payouts
+                               nat
+                               (pair (address %address) (pair (mutez %payout) (timestamp %timestamp))))))
+                (pair (pair (address %potus_fa2) (map %tokens nat bool))
+                      (pair (mutez %treasure_bal) (nat %treasure_payout))))
+          (big_map
+             nat
+             (lambda
+                (pair (or (or nat (or nat unit)) (or (or address key_hash) (or address unit)))
+                      (pair (pair (pair address address)
+                                  (pair (big_map string bytes) (map nat (pair address (pair mutez timestamp)))))
+                            (pair (pair address (map nat bool)) (pair mutez nat))))
+                (pair (list operation)
+                      (pair (pair (pair address address)
+                                  (pair (big_map string bytes) (map nat (pair address (pair mutez timestamp)))))
+                            (pair (pair address (map nat bool)) (pair mutez nat))))))) ;
+  parameter
+    (or (or (nat %add_token) (or (nat %claim) (unit %default)))
+        (or (or (address %set_administrator) (key_hash %set_baker))
+            (or (address %set_potus_fa2) (unit %unset_baker)))) ;
+  code { CAST (pair (or (or nat (or nat unit)) (or (or address key_hash) (or address unit)))
+                    (pair (pair (pair (pair address address)
+                                      (pair (big_map string bytes) (map nat (pair address (pair mutez timestamp)))))
+                                (pair (pair address (map nat bool)) (pair mutez nat)))
+                          (big_map
+                             nat
+                             (lambda
+                                (pair (or (or nat (or nat unit)) (or (or address key_hash) (or address unit)))
+                                      (pair (pair (pair address address)
+                                                  (pair (big_map string bytes) (map nat (pair address (pair mutez timestamp)))))
+                                            (pair (pair address (map nat bool)) (pair mutez nat))))
+                                (pair (list operation)
+                                      (pair (pair (pair address address)
+                                                  (pair (big_map string bytes) (map nat (pair address (pair mutez timestamp)))))
+                                            (pair (pair address (map nat bool)) (pair mutez nat)))))))) ;
+         UNPAIR 3 ;
+         DUP ;
+         IF_LEFT
+           { IF_LEFT
+               { DROP ; PUSH nat 0 }
+               { IF_LEFT { DROP ; PUSH nat 1 } { DROP ; PUSH nat 2 } } }
+           { IF_LEFT
+               { IF_LEFT { DROP ; PUSH nat 3 } { DROP ; PUSH nat 4 } }
+               { IF_LEFT { DROP ; PUSH nat 5 } { DROP ; PUSH nat 6 } } } ;
+         DUP 4 ;
+         SWAP ;
+         GET ;
+         IF_NONE { PUSH int -1 ; FAILWITH } {} ;
+         DUG 2 ;
+         PAIR ;
+         EXEC ;
+         UNPAIR ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONS } ;
+         DUG 2 ;
+         PAIR ;
+         SWAP ;
+         PAIR } }

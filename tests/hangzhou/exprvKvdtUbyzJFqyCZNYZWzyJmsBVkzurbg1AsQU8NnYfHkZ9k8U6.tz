@@ -1,0 +1,59 @@
+{ parameter
+    (or (unit %default)
+        (or (option %set_delegate key_hash)
+            (pair %withdraw (address %recipient) (mutez %amount)))) ;
+  storage address ;
+  code { CAST (pair (or unit (or (option key_hash) (pair address mutez))) address) ;
+         UNPAIR ;
+         IF_LEFT
+           { DROP ;
+             DUP ;
+             CONTRACT %set_vault_balance mutez ;
+             IF_NONE { PUSH int 64 ; FAILWITH } {} ;
+             NIL operation ;
+             SWAP ;
+             PUSH mutez 0 ;
+             BALANCE ;
+             TRANSFER_TOKENS ;
+             CONS }
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH int 401 ; FAILWITH } ;
+                 SET_DELEGATE ;
+                 NIL operation ;
+                 SWAP ;
+                 CONS ;
+                 SELF_ADDRESS ;
+                 CONTRACT unit ;
+                 IF_NONE { PUSH int 57 ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 UNIT ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH int 401 ; FAILWITH } ;
+                 DUP ;
+                 CAR ;
+                 CONTRACT unit ;
+                 IF_NONE { PUSH int 79 ; FAILWITH } {} ;
+                 NIL operation ;
+                 SWAP ;
+                 DIG 2 ;
+                 CDR ;
+                 UNIT ;
+                 TRANSFER_TOKENS ;
+                 CONS } } ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONS } ;
+         PAIR } }

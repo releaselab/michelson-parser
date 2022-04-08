@@ -1,0 +1,68 @@
+{ parameter
+    (or (or (lambda %a unit (pair (list operation) (pair (pair (address %a) (nat %b)) (address %l))))
+            (pair %l (timestamp %deadline) (mutez %minXTZ)))
+        (nat %s)) ;
+  storage (pair (pair (address %a) (nat %b)) (address %l)) ;
+  code { UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { SWAP ;
+                 CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH string "1" ; FAILWITH } ;
+                 UNIT ;
+                 EXEC }
+               { SWAP ;
+                 SELF_ADDRESS ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH string "2" ; FAILWITH } ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 PUSH nat 1 ;
+                 DUP 3 ;
+                 CAR ;
+                 CDR ;
+                 SUB ;
+                 ABS ;
+                 DUP 4 ;
+                 CDR ;
+                 DIG 4 ;
+                 CAR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CONTRACT %tokenToXtz
+                   (pair (address %to)
+                         (pair (nat %tokensSold) (pair (mutez %minXtzBought) (timestamp %deadline)))) ;
+                 IF_NONE { PUSH string "3" ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 TRANSFER_TOKENS ;
+                 SWAP ;
+                 NIL operation ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR } }
+           { SWAP ;
+             DUP ;
+             CDR ;
+             DUG 2 ;
+             CAR ;
+             CAR ;
+             PAIR ;
+             PAIR ;
+             NIL operation ;
+             PAIR } } }

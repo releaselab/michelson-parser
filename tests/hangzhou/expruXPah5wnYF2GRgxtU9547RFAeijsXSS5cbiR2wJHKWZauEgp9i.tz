@@ -1,0 +1,197 @@
+{ parameter
+    (or (or (address %addAdministrator)
+            (pair %createPoll
+               (string %poll_id)
+               (pair %poll_metadata
+                  (pair (pair (string %category) (timestamp %end_date))
+                        (pair (nat %num_options) (timestamp %start_date)))
+                  (string %title))))
+        (or (address %removeAdministrator) (pair %vote (string %poll_id) (nat %vote)))) ;
+  storage
+    (pair (pair (map %administrator address unit)
+                (big_map %polls
+                   string
+                   (pair (pair %metadata
+                            (pair (pair (string %category) (timestamp %end_date))
+                                  (pair (nat %num_options) (timestamp %start_date)))
+                            (string %title))
+                         (map %totals nat nat))))
+          (pair (address %super_admin) (big_map %votes (pair address string) nat))) ;
+  code { LAMBDA
+           address
+           unit
+           { SENDER ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "error_NOT_AN_SUPER_ADMIN" ; FAILWITH } { UNIT } } ;
+         SWAP ;
+         UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 DUP 3 ;
+                 CAR ;
+                 CDR ;
+                 DIG 3 ;
+                 CAR ;
+                 CAR ;
+                 DIG 3 ;
+                 SWAP ;
+                 UNIT ;
+                 SOME ;
+                 DIG 2 ;
+                 UPDATE ;
+                 PAIR ;
+                 PAIR ;
+                 NIL operation ;
+                 PAIR }
+               { DIG 2 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 SENDER ;
+                 MEM ;
+                 IF {} { PUSH string "error_NOT_AN_ADMINISTRATOR" ; FAILWITH } ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 MEM ;
+                 IF { DROP 2 ; PUSH string "error_POLL_ALREADY_EXIST" ; FAILWITH }
+                    { SWAP ;
+                      EMPTY_MAP nat nat ;
+                      DUP 3 ;
+                      CDR ;
+                      PAIR ;
+                      SOME ;
+                      DIG 2 ;
+                      CAR ;
+                      UPDATE } ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 SWAP ;
+                 DIG 2 ;
+                 CAR ;
+                 CAR ;
+                 PAIR ;
+                 PAIR ;
+                 NIL operation ;
+                 PAIR } }
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 DUP 3 ;
+                 CAR ;
+                 CDR ;
+                 DIG 3 ;
+                 CAR ;
+                 CAR ;
+                 DIG 3 ;
+                 NONE unit ;
+                 SWAP ;
+                 UPDATE ;
+                 PAIR ;
+                 PAIR ;
+                 NIL operation ;
+                 PAIR }
+               { DIG 2 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 GET ;
+                 IF_NONE { PUSH string "error_NO_SUCH_POLL" ; FAILWITH } {} ;
+                 CAR ;
+                 DUP ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 NOW ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "error_POLL_HAS_NOT_STARTED" ; FAILWITH } {} ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 NOW ;
+                 COMPARE ;
+                 GT ;
+                 IF { PUSH string "error_POLL_IS_OVER" ; FAILWITH } {} ;
+                 CAR ;
+                 CDR ;
+                 CAR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 COMPARE ;
+                 GT ;
+                 IF { PUSH string "error_VOTE_OPTION_INVALID" ; FAILWITH } {} ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CDR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 SOME ;
+                 DIG 2 ;
+                 CAR ;
+                 SENDER ;
+                 PAIR ;
+                 UPDATE ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 CAR ;
+                 PAIR ;
+                 NIL operation ;
+                 PAIR } } } }

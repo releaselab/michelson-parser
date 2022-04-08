@@ -1,0 +1,165 @@
+{ storage
+    (pair (string %description) (pair (address %main_contract) (bool %patch_applied))) ;
+  parameter (or (unit %apply_unstaking_patch) (nat %unstake_wrapper)) ;
+  code { CAST (pair (or unit nat) (pair string (pair address bool))) ;
+         UNPAIR ;
+         IF_LEFT
+           { DROP ;
+             DUP ;
+             GET 4 ;
+             IF { PUSH string "Patch already active" ; FAILWITH } {} ;
+             PUSH bool True ;
+             UPDATE 4 ;
+             DUP ;
+             GET 3 ;
+             CONTRACT %entrypoint_1_update
+               (lambda
+                  (pair (or (pair (list address) (pair string string)) bytes)
+                        (pair (pair (pair (set address) (set nat))
+                                    (pair (map string bytes) (pair address (big_map (pair address nat) nat))))
+                              (pair (pair (big_map string bytes) (big_map (pair address (pair address nat)) unit))
+                                    (pair bool (pair (big_map nat (pair nat (map string bytes))) (big_map nat nat))))))
+                  (pair (list operation)
+                        (pair (pair (pair (set address) (set nat))
+                                    (pair (map string bytes) (pair address (big_map (pair address nat) nat))))
+                              (pair (pair (big_map string bytes) (big_map (pair address (pair address nat)) unit))
+                                    (pair bool (pair (big_map nat (pair nat (map string bytes))) (big_map nat nat))))))) ;
+             IF_NONE { PUSH int 104 ; FAILWITH } {} ;
+             NIL operation ;
+             SWAP ;
+             PUSH mutez 0 ;
+             LAMBDA
+               (pair (or (pair (list address) (pair string string)) bytes)
+                     (pair (pair (pair (set address) (set nat))
+                                 (pair (map string bytes) (pair address (big_map (pair address nat) nat))))
+                           (pair (pair (big_map string bytes) (big_map (pair address (pair address nat)) unit))
+                                 (pair bool (pair (big_map nat (pair nat (map string bytes))) (big_map nat nat))))))
+               (pair (list operation)
+                     (pair (pair (pair (set address) (set nat))
+                                 (pair (map string bytes) (pair address (big_map (pair address nat) nat))))
+                           (pair (pair (big_map string bytes) (big_map (pair address (pair address nat)) unit))
+                                 (pair bool (pair (big_map nat (pair nat (map string bytes))) (big_map nat nat))))))
+               { NIL operation ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 UNPAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 IF_LEFT { PUSH int 105 ; FAILWITH } {} ;
+                 UNPACK (pair nat bytes) ;
+                 IF_NONE { PUSH int 5 ; FAILWITH } {} ;
+                 DUP ;
+                 CAR ;
+                 PUSH nat 0 ;
+                 COMPARE ;
+                 EQ ;
+                 IF { DIG 2 ;
+                      DROP ;
+                      DIG 2 ;
+                      DROP ;
+                      DIG 3 ;
+                      DROP ;
+                      DUP ;
+                      CDR ;
+                      UNPACK nat ;
+                      IF_NONE { PUSH int 8 ; FAILWITH } {} ;
+                      PUSH nat 0 ;
+                      COMPARE ;
+                      LT ;
+                      IF {}
+                         { PUSH string
+                                "WrongCondition: sp.unpack(data.value.r_params_bytes, sp.TNat).open_some() > 0" ;
+                           FAILWITH } ;
+                      SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      CAR ;
+                      GET 3 ;
+                      PUSH string "stake_map" ;
+                      GET ;
+                      IF_NONE { PUSH int 11 ; FAILWITH } {} ;
+                      UNPACK (map address nat) ;
+                      IF_NONE { PUSH int 11 ; FAILWITH } {} ;
+                      DIG 3 ;
+                      PUSH address "KT1Lw1okX7MSMQWf1jMeVBAn63z28ijGUnL5" ;
+                      CONTRACT %transfer_gov_tokens (list (pair address (list (pair address (pair nat nat))))) ;
+                      IF_NONE { PUSH int 22 ; FAILWITH } {} ;
+                      PUSH mutez 0 ;
+                      NIL (pair address (list (pair address (pair nat nat)))) ;
+                      NIL (pair address (pair nat nat)) ;
+                      DUP 7 ;
+                      CDR ;
+                      UNPACK nat ;
+                      IF_NONE { PUSH int 8 ; FAILWITH } {} ;
+                      PUSH nat 0 ;
+                      SOURCE ;
+                      PAIR 3 ;
+                      CONS ;
+                      SELF_ADDRESS ;
+                      PAIR ;
+                      CONS ;
+                      TRANSFER_TOKENS ;
+                      CONS ;
+                      DUG 3 ;
+                      DUP ;
+                      DIG 2 ;
+                      CDR ;
+                      UNPACK nat ;
+                      IF_NONE { PUSH int 8 ; FAILWITH } {} ;
+                      DIG 2 ;
+                      SOURCE ;
+                      GET ;
+                      IF_NONE { PUSH int 29 ; FAILWITH } {} ;
+                      SUB ;
+                      ISNAT ;
+                      IF_NONE { PUSH int 29 ; FAILWITH } {} ;
+                      SOME ;
+                      SOURCE ;
+                      UPDATE ;
+                      DUP ;
+                      PUSH nat 0 ;
+                      SWAP ;
+                      SOURCE ;
+                      GET ;
+                      IF_NONE { PUSH int 30 ; FAILWITH } {} ;
+                      COMPARE ;
+                      EQ ;
+                      IF { NONE nat ; SOURCE ; UPDATE } {} ;
+                      SWAP ;
+                      UNPAIR ;
+                      UNPAIR ;
+                      SWAP ;
+                      UNPAIR ;
+                      DIG 4 ;
+                      PACK ;
+                      SOME ;
+                      PUSH string "stake_map" ;
+                      UPDATE ;
+                      PAIR ;
+                      SWAP ;
+                      PAIR ;
+                      PAIR }
+                    { DROP ; SWAP ; DROP ; SWAP ; DROP ; DIG 2 ; DROP } ;
+                 SWAP ;
+                 PAIR } ;
+             TRANSFER_TOKENS ;
+             CONS }
+           { NIL operation ;
+             DUP 3 ;
+             GET 3 ;
+             CONTRACT %entrypoint_1 bytes ;
+             IF_NONE { PUSH int 44 ; FAILWITH } {} ;
+             PUSH mutez 0 ;
+             DIG 3 ;
+             PACK ;
+             PUSH int 0 ;
+             PAIR ;
+             PACK ;
+             TRANSFER_TOKENS ;
+             CONS } ;
+         PAIR } }

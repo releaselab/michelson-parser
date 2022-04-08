@@ -1,0 +1,106 @@
+{ parameter
+    (or (or (unit %default) (pair %initSwap nat mutez)) (pair %withdraw (pair nat nat) nat)) ;
+  storage (pair (pair (address %admin) (address %minter)) (address %objkt)) ;
+  code { UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { DROP ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 SOURCE ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH string "Something went wrong" ; FAILWITH } {} ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 CONTRACT unit ;
+                 IF_NONE { PUSH string "not-a-user" ; FAILWITH } {} ;
+                 AMOUNT ;
+                 UNIT ;
+                 TRANSFER_TOKENS ;
+                 SWAP ;
+                 NIL operation ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR }
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 CONTRACT %swap
+                   (pair (nat %objkt_amount) (pair (nat %objkt_id) (mutez %xtz_per_objkt))) ;
+                 IF_NONE { PUSH string "Common/cant-get-start-swap" ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 PUSH nat 1 ;
+                 DUP 4 ;
+                 CAR ;
+                 DIG 4 ;
+                 CDR ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 SWAP ;
+                 NIL operation ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR } }
+           { SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CAR ;
+             SENDER ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "Something went wrong" ; FAILWITH } {} ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CDR ;
+             CONTRACT %cancel_swap nat ;
+             IF_NONE { PUSH string "Common/cant-get-cancel-swap" ; FAILWITH } {} ;
+             PUSH mutez 0 ;
+             DUP 3 ;
+             CAR ;
+             CAR ;
+             TRANSFER_TOKENS ;
+             DUP 3 ;
+             CDR ;
+             CONTRACT %transfer
+               (list (pair (address %from_)
+                           (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+             IF_NONE { PUSH string "not-a-fa2-token" ; FAILWITH } {} ;
+             PUSH mutez 0 ;
+             NIL (pair address (list (pair address (pair nat nat)))) ;
+             SELF_ADDRESS ;
+             NIL (pair address (pair nat nat)) ;
+             DUP 8 ;
+             CAR ;
+             CAR ;
+             DUP 8 ;
+             CAR ;
+             CDR ;
+             DIG 8 ;
+             CDR ;
+             SWAP ;
+             PAIR ;
+             SWAP ;
+             PAIR ;
+             CONS ;
+             SWAP ;
+             PAIR ;
+             CONS ;
+             TRANSFER_TOKENS ;
+             DIG 2 ;
+             NIL operation ;
+             DIG 2 ;
+             CONS ;
+             DIG 2 ;
+             CONS ;
+             PAIR } } }

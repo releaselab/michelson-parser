@@ -1,0 +1,261 @@
+{ parameter
+    (or (or (unit %collect)
+            (pair %initialize
+               (list address)
+               (map address (pair (pair (mutez %amount) (string %color)) (address %to_)))))
+        (or (unit %start) (unit %transfer))) ;
+  storage
+    (pair (pair (pair (bool %alive) (timestamp %end_time))
+                (pair (map %ledger address (pair (pair (mutez %amount) (string %color)) (address %to_)))
+                      (address %owner)))
+          (list %receivers address)) ;
+  code { LAMBDA
+           (pair (pair (pair (pair bool timestamp)
+                             (pair (map address (pair (pair mutez string) address)) address))
+                       (list address))
+                 address)
+           (pair (pair mutez string) address)
+           { DUP ;
+             CAR ;
+             CAR ;
+             CDR ;
+             CAR ;
+             SWAP ;
+             CDR ;
+             GET ;
+             IF_NONE { PUSH string "no receiver match" ; FAILWITH } {} } ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         CDR ;
+         DIG 2 ;
+         CAR ;
+         IF_LEFT
+           { IF_LEFT
+               { DROP ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 NOW ;
+                 COMPARE ;
+                 GT ;
+                 IF { DROP 2 ; PUSH string "can't transfer anymore" ; FAILWITH }
+                    { PUSH bool False ;
+                      SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      CAR ;
+                      CAR ;
+                      CAR ;
+                      COMPARE ;
+                      EQ ;
+                      IF { DROP 2 ; PUSH string "initialize contract first" ; FAILWITH }
+                         { SENDER ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           PAIR ;
+                           DIG 2 ;
+                           SWAP ;
+                           EXEC ;
+                           DUP ;
+                           CDR ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           CAR ;
+                           CDR ;
+                           AMOUNT ;
+                           DIG 3 ;
+                           CAR ;
+                           CAR ;
+                           ADD ;
+                           PAIR ;
+                           PAIR ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           CAR ;
+                           CDR ;
+                           CAR ;
+                           SWAP ;
+                           SOME ;
+                           SENDER ;
+                           UPDATE ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           CDR ;
+                           DIG 2 ;
+                           DUP ;
+                           DUG 3 ;
+                           CAR ;
+                           CDR ;
+                           CDR ;
+                           DIG 2 ;
+                           PAIR ;
+                           DIG 2 ;
+                           CAR ;
+                           CAR ;
+                           PAIR ;
+                           PAIR ;
+                           NIL operation ;
+                           PAIR } } }
+               { DIG 2 ;
+                 DROP ;
+                 DUP ;
+                 CDR ;
+                 SWAP ;
+                 CAR ;
+                 DIG 2 ;
+                 PAIR ;
+                 PAIR ;
+                 DUP ;
+                 CAR ;
+                 CDR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 PAIR ;
+                 DUP ;
+                 CDR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 DIG 3 ;
+                 CDR ;
+                 PAIR ;
+                 DIG 2 ;
+                 CAR ;
+                 CAR ;
+                 PAIR ;
+                 PAIR ;
+                 DUP ;
+                 CDR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 DIG 2 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 PUSH bool True ;
+                 PAIR ;
+                 PAIR ;
+                 PAIR ;
+                 NIL operation ;
+                 PAIR } }
+           { IF_LEFT
+               { DROP ;
+                 SWAP ;
+                 DROP ;
+                 SOURCE ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { DROP ; PUSH string "You are not the admin of this contract" ; FAILWITH }
+                    { PUSH bool False ;
+                      SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      CAR ;
+                      CAR ;
+                      CAR ;
+                      COMPARE ;
+                      EQ ;
+                      IF { DROP ; PUSH string "initialize contract first" ; FAILWITH }
+                         { DUP ;
+                           CDR ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           CAR ;
+                           CDR ;
+                           PUSH int 60 ;
+                           PUSH int 15 ;
+                           MUL ;
+                           NOW ;
+                           ADD ;
+                           DIG 3 ;
+                           CAR ;
+                           CAR ;
+                           CAR ;
+                           PAIR ;
+                           PAIR ;
+                           PAIR ;
+                           NIL operation ;
+                           PAIR } } }
+               { DROP ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 NOW ;
+                 COMPARE ;
+                 LT ;
+                 IF { DROP 2 ; PUSH string "can't transfer yet" ; FAILWITH }
+                    { PUSH bool False ;
+                      SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      CAR ;
+                      CAR ;
+                      CAR ;
+                      COMPARE ;
+                      EQ ;
+                      IF { DROP 2 ; PUSH string "initialize contract first" ; FAILWITH }
+                         { DUP ;
+                           CDR ;
+                           MAP { SWAP ;
+                                 DUP ;
+                                 DUG 2 ;
+                                 PAIR ;
+                                 DIG 2 ;
+                                 DUP ;
+                                 DUG 3 ;
+                                 SWAP ;
+                                 EXEC ;
+                                 DUP ;
+                                 CDR ;
+                                 CONTRACT unit ;
+                                 IF_NONE { PUSH string "no contract match" ; FAILWITH } {} ;
+                                 SWAP ;
+                                 CAR ;
+                                 CAR ;
+                                 UNIT ;
+                                 TRANSFER_TOKENS } ;
+                           DIG 2 ;
+                           DROP ;
+                           SWAP ;
+                           DUP ;
+                           DUG 2 ;
+                           CDR ;
+                           DIG 2 ;
+                           DUP ;
+                           DUG 3 ;
+                           CAR ;
+                           CDR ;
+                           DIG 3 ;
+                           CAR ;
+                           CAR ;
+                           CDR ;
+                           PUSH bool False ;
+                           PAIR ;
+                           PAIR ;
+                           PAIR ;
+                           SWAP ;
+                           PAIR } } } } } }

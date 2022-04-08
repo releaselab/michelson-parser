@@ -1,0 +1,77 @@
+{ storage (pair (address %hen_address) (address %hen_nft_address)) ;
+  parameter
+    (or (or (unit %deposit) (nat %hen_cancel_swap))
+        (or (pair %hen_collect (mutez %price) (nat %swap_id))
+            (or (pair %hen_swap
+                   (pair (address %creator) (nat %objkt_amount))
+                   (pair (nat %objkt_id) (mutez %xtz_per_objkt)))
+                (nat %update_owners)))) ;
+  code { CAST (pair (or (or unit nat) (or (pair mutez nat) (or (pair (pair address nat) (pair nat mutez)) nat)))
+                    (pair address address)) ;
+         UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { DROP ; NIL operation }
+               { NIL operation ;
+                 DUP 3 ;
+                 CAR ;
+                 CONTRACT %cancel_swap nat ;
+                 IF_NONE { PUSH int 69 ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 DIG 3 ;
+                 TRANSFER_TOKENS ;
+                 CONS } }
+           { IF_LEFT
+               { NIL operation ;
+                 DUP 3 ;
+                 CAR ;
+                 CONTRACT %collect nat ;
+                 IF_NONE { PUSH int 19 ; FAILWITH } {} ;
+                 DIG 2 ;
+                 UNPAIR ;
+                 SWAP ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { IF_LEFT
+                   { NIL operation ;
+                     DUP 3 ;
+                     CAR ;
+                     CONTRACT %swap (pair (pair address nat) (pair nat (pair nat mutez))) ;
+                     IF_NONE { PUSH int 48 ; FAILWITH } {} ;
+                     PUSH mutez 0 ;
+                     DUP 4 ;
+                     GET 4 ;
+                     PUSH nat 100 ;
+                     PAIR ;
+                     DUP 5 ;
+                     GET 3 ;
+                     PAIR ;
+                     DIG 4 ;
+                     DUP ;
+                     CAR ;
+                     CDR ;
+                     SWAP ;
+                     CAR ;
+                     CAR ;
+                     PAIR ;
+                     PAIR ;
+                     TRANSFER_TOKENS ;
+                     CONS }
+                   { NIL operation ;
+                     DUP 3 ;
+                     CDR ;
+                     CONTRACT %update_operators
+                       (list (or (pair address (pair address nat)) (pair address (pair address nat)))) ;
+                     IF_NONE { PUSH int 26 ; FAILWITH } {} ;
+                     PUSH mutez 0 ;
+                     NIL (or (pair address (pair address nat)) (pair address (pair address nat))) ;
+                     DIG 4 ;
+                     SELF_ADDRESS ;
+                     DUP 7 ;
+                     CDR ;
+                     PAIR 3 ;
+                     LEFT (pair address (pair address nat)) ;
+                     CONS ;
+                     TRANSFER_TOKENS ;
+                     CONS } } } ;
+         PAIR } }

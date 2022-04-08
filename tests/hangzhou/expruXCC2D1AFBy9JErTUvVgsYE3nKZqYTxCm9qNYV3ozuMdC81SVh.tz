@@ -1,0 +1,68 @@
+{ storage unit ;
+  parameter (pair %SaBee (list %addresses address) (mutez %amount)) ;
+  code { CAST (pair (pair (list address) mutez) unit) ;
+         UNPAIR ;
+         DUP ;
+         CAR ;
+         SIZE ;
+         PUSH nat 0 ;
+         COMPARE ;
+         LT ;
+         IF { DUP ; CDR ; PUSH mutez 0 ; COMPARE ; LT } { PUSH bool False } ;
+         IF {}
+            { PUSH string
+                   "WrongCondition: (sp.len(params.addresses) > 0) & (params.amount > sp.tez(0))" ;
+              FAILWITH } ;
+         DUP ;
+         CDR ;
+         AMOUNT ;
+         EDIV ;
+         IF_NONE { PUSH int 13 ; FAILWITH } {} ;
+         CAR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         CAR ;
+         SIZE ;
+         COMPARE ;
+         EQ ;
+         IF { PUSH mutez 1 ;
+              DUP ;
+              DUP 3 ;
+              CDR ;
+              EDIV ;
+              IF_NONE { PUSH int 14 ; FAILWITH } {} ;
+              CAR ;
+              DUP 3 ;
+              CDR ;
+              AMOUNT ;
+              EDIV ;
+              IF_NONE { PUSH int 13 ; FAILWITH } {} ;
+              CAR ;
+              MUL ;
+              MUL ;
+              AMOUNT ;
+              COMPARE ;
+              EQ }
+            { PUSH bool False } ;
+         IF {}
+            { PUSH string
+                   "WrongCondition: (sp.len(params.addresses) == sp.fst(sp.ediv(sp.amount, params.amount).open_some())) & (sp.amount == sp.mul(sp.fst(sp.ediv(sp.amount, params.amount).open_some()) * sp.fst(sp.ediv(params.amount, sp.mutez(1)).open_some()), sp.mutez(1)))" ;
+              FAILWITH } ;
+         DUP ;
+         CAR ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONTRACT unit ;
+                IF_NONE { PUSH int 17 ; FAILWITH } {} ;
+                DUP 3 ;
+                CDR ;
+                UNIT ;
+                TRANSFER_TOKENS ;
+                CONS } ;
+         SWAP ;
+         DROP ;
+         NIL operation ;
+         SWAP ;
+         ITER { CONS } ;
+         PAIR } }
