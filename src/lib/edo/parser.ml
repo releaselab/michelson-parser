@@ -1,11 +1,22 @@
+open! Core
 open Tezos_micheline
-open Edo_adt.Adt
+open Edo_adt
+open Common_adt
 include Common_parser.Parser
 
 let rec convert filename ast =
+  let id = ref (-1) in
+  let next_id () =
+    let () = id := !id + 1 in
+    !id
+  in
+  let create : type a. ?location:Loc.t -> a -> a Node.t =
+   fun ?(location = Loc.dummy_loc) a -> Node.create (next_id ()) ~location a
+  in
   let rec typ token =
     let t =
       let open Micheline in
+      let open Adt in
       match token with
       | Prim (_, "unit", [], _) -> T_unit
       | Prim (_, "never", [], _) -> T_never
@@ -24,6 +35,8 @@ let rec convert filename ast =
       | Prim (_, "option", [ t ], _) -> T_option (typ t)
       | Prim (_, "or", [ t_1; t_2 ], _) -> T_or (typ t_1, typ t_2)
       | Prim (_, "pair", [ t_1; t_2 ], _) -> T_pair (typ t_1, typ t_2)
+      | Prim (loc, "pair", t_1 :: t_2 :: t_3 :: l, annot) ->
+          T_pair (typ t_1, typ (Prim (loc, "pair", t_2 :: t_3 :: l, annot)))
       | Prim (_, "list", [ t ], _) -> T_list (typ t)
       | Prim (_, "set", [ t ], _) -> T_set (typ t)
       | Prim (_, "operation", [], _) -> T_operation
@@ -39,65 +52,97 @@ let rec convert filename ast =
           T_sapling_transaction (Bigint.of_zarith_bigint n)
       | Prim (_, "sapling_state", [ Int (_, n) ], _) ->
           T_sapling_state (Bigint.of_zarith_bigint n)
-      | _ -> error token
+      | _ ->
+          error Format.str_formatter filename token;
+          failwith (Format.flush_str_formatter ())
     in
     match token with
     | Prim (_, _, _, l) ->
-        (token_location filename token, t, List.map get_annot l)
+        create
+          ~location:(token_location filename token)
+          (t, List.map l ~f:get_annot)
     | _ -> assert false
   in
 
   let bigint_of_z n = Bigint.of_zarith_bigint n in
 
-  let rec data (_, typ, _) token =
-    let t =
-      let open Micheline in
-      match token with
-      | Int (_, n) -> D_int (bigint_of_z n)
-      | String (_, s) -> D_string s
-      | Bytes (_, b) -> D_bytes b
-      | Prim (_, "Unit", [], _) -> D_unit
-      | Prim (_, "True", [], _) -> D_bool true
-      | Prim (_, "False", [], _) -> D_bool false
-      | Prim (_, "Pair", [ d_1; d_2 ], _) -> (
-          match typ with
-          | T_pair (t_1, t_2) -> D_pair (data t_1 d_1, data t_2 d_2)
-          | _ -> assert false)
-      | Prim (_, "Left", [ d ], _) -> (
-          match typ with T_or (t, _) -> D_left (data t d) | _ -> assert false)
-      | Prim (_, "Right", [ d ], _) -> (
-          match typ with T_or (_, t) -> D_right (data t d) | _ -> assert false)
-      | Prim (_, "Some", [ d ], _) -> (
-          match typ with T_option t -> D_some (data t d) | _ -> assert false)
-      | Prim (_, "None", [], _) -> (
-          match typ with T_option _ -> D_none | _ -> assert false)
-      | Prim _ as i -> (
-          match typ with
-          | T_lambda _ -> D_instruction (inst i)
-          | _ -> assert false)
-      | Seq (_, l) -> (
-          match typ with
-          | T_list t | T_set t -> D_list (List.map (data t) l)
-          | T_map (t_1, t_2) | T_big_map (t_1, t_2) ->
-              D_list (List.map (data_elt t_1 t_2) l)
-          | T_lambda _ -> D_instruction (inst token)
-          | _ -> assert false)
+  let rec data ({ Node.value = typ, _; _ } as t) token =
+    let open Micheline in
+    let open Adt in
+    let create ?(token = token) =
+      create ~location:(token_location filename token)
     in
-    (token_location filename token, t)
-  and data_elt typ_1 typ_2 token =
-    let t =
-      let open Micheline in
-      match token with
-      | Prim (_, "Elt", [ d_1; d_2 ], _) ->
-          D_elt (data typ_1 d_1, data typ_2 d_2)
-      | _ -> assert false
-    in
-    (token_location filename token, t)
+    match token with
+    | Int (_, n) -> create (D_int (bigint_of_z n))
+    | String (_, s) -> create (D_string s)
+    | Bytes (_, b) -> create (D_bytes b)
+    | Prim (_, "Unit", [], _) -> create D_unit
+    | Prim (_, "True", [], _) -> create (D_bool true)
+    | Prim (_, "False", [], _) -> create (D_bool false)
+    | Prim (_, "Pair", [ d_1; d_2 ], _) -> (
+        match typ with
+        | T_pair (t_1, t_2) -> create (D_pair (data t_1 d_1, data t_2 d_2))
+        | _ -> assert false)
+    | Prim (_, "Pair", l, _) ->
+        let rec data_pair_n t l =
+          match (fst t.Node.value, l) with
+          | T_pair (t_1, t_2), x_1 :: x_2 :: xs ->
+              create (Adt.D_pair (data t_1 x_1, data_pair_n t_2 (x_2 :: xs)))
+          | _, [ x ] -> data t x
+          | _ -> assert false
+        in
+        data_pair_n t l
+    | Prim (_, "Left", [ d ], _) -> (
+        match typ with
+        | T_or (t, _) -> create (D_left (data t d))
+        | _ -> assert false)
+    | Prim (_, "Right", [ d ], _) -> (
+        match typ with
+        | T_or (_, t) -> create (D_right (data t d))
+        | _ -> assert false)
+    | Prim (_, "Some", [ d ], _) -> (
+        match typ with
+        | T_option t -> create (D_some (data t d))
+        | _ -> assert false)
+    | Prim (_, "None", [], _) -> (
+        match typ with T_option _ -> create D_none | _ -> assert false)
+    | Prim _ as i -> (
+        match typ with
+        | T_lambda _ -> create (D_instruction (inst i))
+        | _ -> assert false)
+    | Seq (_, l) -> (
+        match typ with
+        | T_list t | T_set t -> create (D_list (List.map l ~f:(data t)))
+        | T_map (t_1, t_2) | T_big_map (t_1, t_2) ->
+            let data_elt typ_1 typ_2 token =
+              let open Micheline in
+              let open Adt in
+              match token with
+              | Prim (_, "Elt", [ d_1; d_2 ], _) ->
+                  create ~token (D_elt (data typ_1 d_1, data typ_2 d_2))
+              | _ -> assert false
+            in
+            create (D_list (List.map l ~f:(data_elt t_1 t_2)))
+        | T_lambda _ -> create (D_instruction (inst token))
+        | T_pair _ ->
+            let rec data_pair_n t l =
+              match (fst t.Node.value, l) with
+              | T_pair (t_1, t_2), x_1 :: x_2 :: xs ->
+                  create
+                    (Adt.D_pair (data t_1 x_1, data_pair_n t_2 (x_2 :: xs)))
+              | _, [ x ] -> data t x
+              | _ -> assert false
+            in
+            data_pair_n t l
+        | _ ->
+            error Format.str_formatter filename token;
+            failwith (Format.flush_str_formatter ()))
   and inst token =
-    let t =
+    let i =
       let open Micheline in
+      let open Adt in
       match token with
-      | Seq (_, l) -> I_seq (List.map inst l)
+      | Seq (_, l) -> I_seq (List.map l ~f:inst)
       | Prim (_, "RENAME", [], _) -> I_rename
       | Prim (_, "FAILWITH", [], _) -> I_failwith
       | Prim (_, "IF", [ i_t; i_f ], _) -> I_if (inst i_t, inst i_f)
@@ -111,7 +156,7 @@ let rec convert filename ast =
       | Prim (_, "DROP", [], _) -> I_drop
       | Prim (_, "DROP", [ Int (_, n) ], _) ->
           I_drop_n (Bigint.of_zarith_bigint n)
-      | Prim (_, "DUP", [], _) -> I_dup
+      | Prim (_, "DUP", [], _) -> I_dup Bigint.one
       | Prim (_, "SWAP", [], _) -> I_swap
       | Prim (_, "DIG", [ Int (_, n) ], _) -> I_dig (Bigint.of_zarith_bigint n)
       | Prim (_, "DUG", [ Int (_, n) ], _) -> I_dug (Bigint.of_zarith_bigint n)
@@ -189,6 +234,8 @@ let rec convert filename ast =
       | Prim (_, "CHECK_SIGNATURE", [], _) -> I_check_signature
       | Prim (_, "CAST", [ t ], _) -> I_cast (typ t)
       | Prim (_, "UNPAIR", [], _) -> I_unpair
+      | Prim (_, "UNPAIR", [ Int (_, n) ], _) ->
+          I_unpair_n (Bigint.of_zarith_bigint n)
       | Prim (_, "NEVER", [], _) -> I_never
       | Prim (_, "SELF_ADDRESS", [], _) -> I_self_address
       | Prim (_, "VOTING_POWER", [], _) -> I_voting_power
@@ -202,8 +249,7 @@ let rec convert filename ast =
       | Prim (_, "READ_TICKET", [], _) -> I_read_ticket
       | Prim (_, "SPLIT_TICKET", [], _) -> I_split_ticket
       | Prim (_, "JOIN_TICKETS", [], _) -> I_join_tickets
-      | Prim (_, "DUP", [ Int (_, n) ], _) ->
-          I_dup_n (Bigint.of_zarith_bigint n)
+      | Prim (_, "DUP", [ Int (_, n) ], _) -> I_dup (Bigint.of_zarith_bigint n)
       | Prim (_, "PAIR", [ Int (_, n) ], _) ->
           I_pair_n (Bigint.of_zarith_bigint n)
       | Prim (_, "GET", [ Int (_, n) ], _) ->
@@ -212,33 +258,39 @@ let rec convert filename ast =
           I_update_n (Bigint.of_zarith_bigint n)
       | Prim (_, "SAPLING_EMPTY_STATE", [ Int (_, n) ], _) ->
           I_sapling_empty_state (Bigint.of_zarith_bigint n)
-      | t -> error t
+      | Prim (_, "GET_AND_UPDATE", [], _) -> I_get_and_update
+      | t ->
+          error Format.str_formatter filename t;
+          failwith (Format.flush_str_formatter ())
     in
 
     match token with
-    | Seq _ -> (token_location filename token, t, [])
+    | Seq _ -> create ~location:(token_location filename token) (i, [])
     | Prim (_, _, _, l) ->
-        (token_location filename token, t, List.map get_annot l)
+        create
+          ~location:(token_location filename token)
+          (i, List.map l ~f:get_annot)
     | _ -> assert false
   in
 
   let parameter =
-    List.find_map
-      (function
-        | Micheline.Prim (_, "parameter", [ t ], _) -> Some t | _ -> None)
-      ast
+    List.find_map ast ~f:(function
+      | Micheline.Prim (_, "parameter", [ t ], _) -> Some t
+      | _ -> None)
   in
-  let param = typ (Option.get parameter) in
+
+  let param = typ (Option.value_exn parameter) in
   let storage =
-    List.find_map
-      (function Micheline.Prim (_, "storage", [ t ], _) -> Some t | _ -> None)
-      ast
+    List.find_map ast ~f:(function
+      | Micheline.Prim (_, "storage", [ t ], _) -> Some t
+      | _ -> None)
   in
-  let storage = typ (Option.get storage) in
+
+  let storage = typ (Option.value_exn storage) in
   let code =
-    List.find_map
-      (function Micheline.Prim (_, "code", [ c ], _) -> Some c | _ -> None)
-      ast
+    List.find_map ast ~f:(function
+      | Micheline.Prim (_, "code", [ c ], _) -> Some c
+      | _ -> None)
   in
-  let code = inst (Option.get code) in
+  let code = inst (Option.value_exn code) in
   { code; param; storage }

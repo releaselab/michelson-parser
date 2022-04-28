@@ -1,6 +1,18 @@
 (library
  (name edo_parser)
  (public_name michelson-parser.edo)
- (libraries common_parser michelson-adt.edo tezos-micheline base bignum)
+ (libraries
+  common_parser
+  michelson-adt.edo
+  tezos-micheline
+  core
+  bignum
+  pp_loc)
+ (inline_tests)
  (preprocess
-  (pps ppx_deriving.ord ppx_sexp_conv)))
+  (pps
+   ppx_inline_test
+   ppx_assert
+   ppx_deriving.eq
+   ppx_deriving.ord
+   ppx_sexp_conv)))

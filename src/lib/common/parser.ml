@@ -15,14 +15,18 @@ let parse_file filename =
       | _, _ :: _ -> failwith "Cannot parse_toplevel"
       | ast, [] -> ast)
 
-let error t =
-  let loc = Micheline.location t in
-  failwith
-    (Printf.sprintf "ill-formed code: line %d, col %d to line %d, col %d"
-       loc.Micheline_parser.start.line
-       (loc.Micheline_parser.start.column + 1)
-       loc.Micheline_parser.stop.line
-       (loc.Micheline_parser.stop.column + 1))
+let error ppf filename token =
+  let input = Pp_loc.Input.file filename in
+  let loc = Micheline.location token in
+  let start =
+    Pp_loc.Position.of_line_col loc.Micheline_parser.start.line
+      loc.Micheline_parser.start.column
+  in
+  let stop =
+    Pp_loc.Position.of_line_col loc.Micheline_parser.stop.line
+      loc.Micheline_parser.stop.column
+  in
+  Pp_loc.pp ~input ppf [ (start, stop) ]
 
 let token_location filename token =
   let open Micheline in

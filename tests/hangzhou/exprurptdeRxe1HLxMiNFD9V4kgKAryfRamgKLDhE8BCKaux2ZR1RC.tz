@@ -1,3 +1,0 @@
-{ parameter (ticket bytes) ;
-  storage unit ;
-  code { DROP ; PUSH unit Unit ; NIL operation ; PAIR } }

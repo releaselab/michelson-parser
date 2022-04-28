@@ -30,7 +30,9 @@ let rec convert filename ast =
       | Prim (_, "lambda", [ t_1; t_2 ], _) -> T_lambda (typ t_1, typ t_2)
       | Prim (_, "big_map", [ t_1; t_2 ], _) -> T_big_map (typ t_1, typ t_2)
       | Prim (_, "map", [ t_1; t_2 ], _) -> T_map (typ t_1, typ t_2)
-      | _ -> error token
+      | _ ->
+          error Format.str_formatter filename token;
+          failwith (Format.flush_str_formatter ())
     in
     match token with
     | Prim (_, _, _, l) ->
@@ -178,7 +180,9 @@ let rec convert filename ast =
       | Prim (_, "CHECK_SIGNATURE", [], _) -> I_check_signature
       | Prim (_, "CAST", [ t ], _) -> I_cast (typ t)
       | Prim (_, "UNPAIR", [], _) -> I_unpair
-      | t -> error t
+      | t ->
+          error Format.str_formatter filename t;
+          failwith (Format.flush_str_formatter ())
     in
     match token with
     | Seq _ -> (token_location filename token, t, [])

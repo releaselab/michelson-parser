@@ -1,6 +1,14 @@
 (test
  (name parsing)
- (libraries michelson-adt.edo michelson-parser.edo alcotest)
+ (libraries
+  core
+  core_unix.sys_unix
+  alcotest
+  michelson-adt.common
+  michelson-adt.edo
+  michelson-parser.edo)
+ (preprocess
+  (pps ppx_assert ppx_sexp_conv ppx_deriving.eq))
  (action
   (chdir
    %{workspace_root}

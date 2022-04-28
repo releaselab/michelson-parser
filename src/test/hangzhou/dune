@@ -1,9 +1,0 @@
-(test
- (name parsing)
- (libraries alcotest michelson-adt.hangzhou michelson-parser.hangzhou)
- (preprocess
-  (pps ppx_assert ppx_sexp_conv ppx_deriving.eq))
- (action
-  (chdir
-   %{workspace_root}
-   (run %{test}))))

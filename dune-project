@@ -28,6 +28,8 @@
   (tezos-micheline
    (>= 7.0))
   ppx_deriving
+  (pp_loc
+   (>= 2.0))
   (bisect_ppx
    (and
     :with-test
