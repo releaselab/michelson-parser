@@ -1,13 +1,16 @@
 # Michelson parser
 
-An OCaml library to parse Michelson smart contracts.
+![main workflow](https://github.com/joaosreis/michelson-parser/actions/workflows/main.yml/badge.svg)
+
+An OCaml library to parse Michelson smart contracts into an
+[ADT](https://github.com/joaosreis/michelson-adt).
 
 ## Install instructions
 
 ### Using dune
 
 ```bash
-git clone https://github.com/releaselab/michelson-parser.git
+git clone https://github.com/joaosreis/michelson-parser.git
 cd michelson-parser
 dune build @install
 dune install
@@ -16,7 +19,7 @@ dune install
 ### Using opam
 
 ```bash
-opam pin add michelson https://github.com/releaselab/michelson-parser.git
+opam install https://github.com/joaosreis/michelson-parser.git
 ```
 
 ---

@@ -5,17 +5,17 @@
 (generate_opam_files true)
 
 (source
- (uri "git+https://github.com/releaselab/michelson-parser.git"))
+ (uri "git+https://github.com/joaosreis/michelson-parser.git"))
 
-(bug_reports "https://github.com/releaselab/michelson-parser/issues")
+(bug_reports "https://github.com/joaosreis/michelson-parser/issues")
 
-(homepage "https://github.com/releaselab/michelson-parser")
+(homepage "https://github.com/joaosreis/michelson-parser")
 
 (license MIT)
 
-(authors "Jo\195\163o Santos Reis <joao.reis@ubi.pt>")
+(authors "Jo\195\163o Santos Reis <joaosreis@outlook.pt>")
 
-(maintainers "Jo\195\163o Santos Reis <joao.reis@ubi.pt>")
+(maintainers "Jo\195\163o Santos Reis <joaosreis@outlook.pt>")
 
 (package
  (name michelson-parser)
@@ -23,7 +23,12 @@
  (synopsis "An OCaml library to parse Michelson smart contracts")
  (depends
   (dune :build)
-  core
+  (core
+   (>= 0.15))
+  (core_unix
+   (and
+    :with-test
+    (>= 0.15)))
   michelson-adt
   (tezos-micheline
    (>= 7.0))

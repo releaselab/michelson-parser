@@ -1,6 +1,11 @@
 (test
  (name parsing)
- (libraries michelson-adt.carthage michelson-parser.carthage alcotest)
+ (libraries
+  core
+  core_unix.sys_unix
+  michelson-adt.carthage
+  michelson-parser.carthage
+  alcotest)
  (action
   (chdir
    %{workspace_root}
